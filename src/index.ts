@@ -9,13 +9,15 @@ import HeaderComponent from './headercomponent';
  */
 const plugin: JupyterFrontEndPlugin<void> = {
   id: 'jupyterlab_hub_credit_extension:plugin',
-  description: 'A JupyterLab extension that shows the information delivered by the JupyterHub Credit Service.',
+  description:
+    'A JupyterLab extension that shows the information delivered by the JupyterHub Credit Service.',
   autoStart: true,
   activate: (app: JupyterFrontEnd) => {
-    console.log('JupyterLab extension jupyterlab_hub_credit_extension is activated!');
+    console.log(
+      'JupyterLab extension jupyterlab_hub_credit_extension is activated!'
+    );
     // Create the widget
     const widget = new HeaderComponent();
-    
 
     // Add the widget to the top area
     app.shell.add(widget, 'top', { rank: 100 });
