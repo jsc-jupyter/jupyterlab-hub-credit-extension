@@ -1,6 +1,6 @@
 {
     "name": "jupyterlab_hub_credit_extension",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "A JupyterLab extension to show JupyterHub Credit information",
     "keywords": [
         "jupyter",
