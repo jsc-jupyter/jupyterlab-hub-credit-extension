@@ -6,6 +6,9 @@ import { PageConfig } from '@jupyterlab/coreutils';
 
 export const CreditsView: React.FC = () => {
   const [credits, setCredits] = React.useState('');
+  const [creditsServiceAvailable, setCreditsServiceAvailable] =
+    React.useState(false);
+  const [serverHasCredits, setServerHasCredits] = React.useState(true);
 
   let hubServerUser = PageConfig.getOption('hubServerUser2');
   if (hubServerUser === '') {
@@ -13,10 +16,37 @@ export const CreditsView: React.FC = () => {
   }
   const hubServerName = PageConfig.getOption('hubServerName');
   const hubPrefix = PageConfig.getOption('hubPrefix');
+  const token = PageConfig.getOption('token');
+
+  React.useEffect(() => {
+    if (!hubPrefix) {
+      return;
+    }
+    const hubCreditsHealth = `${hubPrefix}api/credits/health`;
+    fetch(hubCreditsHealth, {
+      method: 'GET',
+      headers: {
+        Authorization: `token ${token}`
+      },
+      credentials: 'omit'
+    })
+      .then(response => {
+        if (response.ok) {
+          console.log('JupyterHub Credit Service is available.');
+          setCreditsServiceAvailable(true);
+        } else {
+          setCreditsServiceAvailable(false);
+        }
+      })
+      .catch(() => setCreditsServiceAvailable(false));
+  }, []);
+
   React.useEffect(() => {
     const start = async () => {
+      if (!creditsServiceAvailable || !serverHasCredits || !hubPrefix) {
+        return;
+      }
       let evt: EventSource | null = null;
-      // const token = PageConfig.getOption('token');
       if (hubServerName && hubServerUser) {
         evt = new EventSource(
           hubPrefix +
@@ -50,8 +80,8 @@ export const CreditsView: React.FC = () => {
       };
 
       evt.onerror = err => {
-        console.error('SSE connection error', err);
-        setCredits('Unavailable (refresh website to retry)');
+        evt.close();
+        setServerHasCredits(false);
       };
 
       // Cleanup when component unmounts
@@ -62,13 +92,12 @@ export const CreditsView: React.FC = () => {
       };
     };
     start();
-  }, []);
+  }, [creditsServiceAvailable]);
 
   const homeClick = () => {
     window.open(hubPrefix + 'home', '_blank');
   };
   const stopClick = () => {
-    const token = PageConfig.getOption('token');
     const url = hubServerName
       ? `${hubPrefix}api/credits/stopserver/${hubServerUser}/${hubServerName}`
       : `${hubPrefix}api/credits/stopserver/${hubServerUser}`;
@@ -86,7 +115,7 @@ export const CreditsView: React.FC = () => {
 
   return (
     <div className="lm-Widget lm-MenuBar jp-scrollbar-tiny">
-      {hubPrefix && hubServerUser && (
+      {hubPrefix && (
         <ul
           className="lm-MenuBar-content"
           role="menubar"
@@ -101,16 +130,20 @@ export const CreditsView: React.FC = () => {
               color: 'var(--jp-accept-color-normal, var(--jp-brand-color1))'
             }}
           />
-          <StopIcon
-            onClick={stopClick}
-            style={{
-              marginLeft: '12px',
-              marginRight: '6px',
-              cursor: 'pointer',
-              color: 'var(--jp-warn-color-normal, var(--jp-error-color1))'
-            }}
-          />
-          <div style={{ marginLeft: '20px' }}>{credits}</div>
+          {creditsServiceAvailable && (
+            <>
+              <StopIcon
+                onClick={stopClick}
+                style={{
+                  marginLeft: '12px',
+                  marginRight: '6px',
+                  cursor: 'pointer',
+                  color: 'var(--jp-warn-color-normal, var(--jp-error-color1))'
+                }}
+              />
+              <div style={{ marginLeft: '20px' }}>{credits}</div>
+            </>
+          )}
         </ul>
       )}
     </div>
