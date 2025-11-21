@@ -7,19 +7,14 @@ import { PageConfig } from '@jupyterlab/coreutils';
 export const CreditsView: React.FC = () => {
   const [credits, setCredits] = React.useState('');
 
-  const hubServerUser = PageConfig.getOption('hubServerUser');
+  let hubServerUser = PageConfig.getOption('hubServerUser2');
+  if (hubServerUser === '') {
+    hubServerUser = PageConfig.getOption('hubUser');
+  }
   const hubServerName = PageConfig.getOption('hubServerName');
   const hubPrefix = PageConfig.getOption('hubPrefix');
   React.useEffect(() => {
     const start = async () => {
-      console.log(
-        'hubServerUser:',
-        hubServerUser,
-        'hubServerName:',
-        hubServerName,
-        'hubPrefix:',
-        hubPrefix
-      );
       let evt: EventSource | null = null;
       // const token = PageConfig.getOption('token');
       if (hubServerName && hubServerUser) {
@@ -40,7 +35,6 @@ export const CreditsView: React.FC = () => {
       // Open SSE connection
       evt.onmessage = msg => {
         const data = JSON.parse(msg.data);
-        console.log('Received SSE message:', data);
         let text = 'Credits: ' + data.balance + ' / ' + data.cap;
         if (data.project) {
           text +=
@@ -75,7 +69,6 @@ export const CreditsView: React.FC = () => {
   };
   const stopClick = () => {
     const token = PageConfig.getOption('token');
-    console.log(token);
     const url = hubServerName
       ? `${hubPrefix}api/credits/stopserver/${hubServerUser}/${hubServerName}`
       : `${hubPrefix}api/credits/stopserver/${hubServerUser}`;
