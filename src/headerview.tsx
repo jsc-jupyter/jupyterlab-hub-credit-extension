@@ -20,7 +20,7 @@ export const CreditsView: React.FC = () => {
         'hubPrefix:',
         hubPrefix
       );
-      var evt: EventSource | null = null;
+      let evt: EventSource | null = null;
       // const token = PageConfig.getOption('token');
       if (hubServerName && hubServerUser) {
         evt = new EventSource(
@@ -41,7 +41,7 @@ export const CreditsView: React.FC = () => {
       evt.onmessage = msg => {
         const data = JSON.parse(msg.data);
         console.log('Received SSE message:', data);
-        var text = 'Credits: ' + data.balance + ' / ' + data.cap;
+        let text = 'Credits: ' + data.balance + ' / ' + data.cap;
         if (data.project) {
           text +=
             ' ( ' +
@@ -62,7 +62,9 @@ export const CreditsView: React.FC = () => {
 
       // Cleanup when component unmounts
       return () => {
-        if (evt) evt.close();
+        if (evt) {
+          evt.close();
+        }
       };
     };
     start();
