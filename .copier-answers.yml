@@ -1,0 +1,15 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: v4.5.0
+_src_path: https://github.com/jupyterlab/extension-template
+author_email: t.kreuzer@fz-juelich.de
+author_name: Tim Kreuzer
+has_ai_rules: false
+has_binder: false
+has_settings: false
+kind: frontend
+labextension_name: jupyterlab_hub_credit_extension
+project_short_description: A JupyterLab extension to show JupyterHub Credit information
+python_name: jupyterlab_hub_credit_extension
+repository: https://github.com/jsc-jupyter/jupyterlab-hub-credit-extension
+test: false
+
