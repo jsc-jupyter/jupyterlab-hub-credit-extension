@@ -1,8 +1,37 @@
 // CreditsView.tsx
 import * as React from 'react';
+import { Dialog, showDialog } from '@jupyterlab/apputils';
 import HomeIcon from '@mui/icons-material/Home';
 import StopIcon from '@mui/icons-material/StopCircle';
 import { PageConfig } from '@jupyterlab/coreutils';
+
+export function showQuickPopup(message: string) {
+  const hubPrefix = PageConfig.getOption('hubPrefix');
+  const samePagehomeClick = () => {
+    window.location.href = hubPrefix + 'home';
+  };
+  const body = (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        whiteSpace: 'pre-line'
+      }}
+    >
+      <span>{message}</span>
+    </div>
+  );
+  showDialog({
+    title: 'Jupyter Server Stopped',
+    body,
+    buttons: [Dialog.okButton({ label: 'OK' })]
+  }).then(result => {
+    if (result.button.accept) {
+      samePagehomeClick();
+    }
+  });
+}
 
 export const CreditsView: React.FC = () => {
   const [credits, setCredits] = React.useState('');
@@ -32,7 +61,6 @@ export const CreditsView: React.FC = () => {
     })
       .then(response => {
         if (response.ok) {
-          console.log('JupyterHub Credit Service is available.');
           setCreditsServiceAvailable(true);
         } else {
           setCreditsServiceAvailable(false);
@@ -65,6 +93,11 @@ export const CreditsView: React.FC = () => {
       // Open SSE connection
       evt.onmessage = msg => {
         const data = JSON.parse(msg.data);
+        if (data.error) {
+          showQuickPopup(data.error);
+          setServerHasCredits(false);
+          return;
+        }
         let text = 'Credits: ' + data.balance + ' / ' + data.cap;
         if (data.project) {
           text +=
