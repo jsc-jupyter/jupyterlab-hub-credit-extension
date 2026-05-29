@@ -1,6 +1,6 @@
 {
     "name": "jupyterlab_hub_credit_extension",
-    "version": "0.2.1",
+    "version": "0.3.0",
     "description": "A JupyterLab extension to show JupyterHub Credit information",
     "keywords": [
         "jupyter",
@@ -58,10 +58,12 @@
         "@emotion/react": "^11.14.0",
         "@emotion/styled": "^11.14.1",
         "@jupyterlab/application": "^4.0.0",
-        "@jupyterlab/apputils": "^4.6.0",
+        "@jupyterlab/apputils": "^4.6.7",
+        "@jupyterlab/coreutils": "^6.0.0",
+        "@jupyterlab/services": "^7.0.0",
         "@lumino/widgets": "^2.7.2",
-        "@mui/icons-material": "^7.3.5",
-        "@mui/material": "^7.3.5"
+        "@mui/icons-material": "^9.0.1",
+        "@mui/material": "^9.0.1"
     },
     "devDependencies": {
         "@jupyterlab/builder": "^4.0.0",
@@ -74,6 +76,7 @@
         "eslint": "^8.36.0",
         "eslint-config-prettier": "^8.8.0",
         "eslint-plugin-prettier": "^5.0.0",
+        "mkdirp": "^1.0.3",
         "npm-run-all2": "^7.0.1",
         "prettier": "^3.0.0",
         "rimraf": "^5.0.1",
@@ -84,8 +87,20 @@
         "stylelint-config-standard": "^34.0.0",
         "stylelint-csstree-validator": "^3.0.0",
         "stylelint-prettier": "^4.0.0",
-        "typescript": "~5.8.0",
+        "typescript": "~5.5.4",
         "yjs": "^13.5.0"
+    },
+    "resolutions": {
+        "lib0": "0.2.111",
+        "@lumino/algorithm": "2.0.4",
+        "@lumino/commands": "2.3.3",
+        "@lumino/coreutils": "2.2.2",
+        "@lumino/disposable": "2.1.5",
+        "@lumino/domutils": "2.0.4",
+        "@lumino/messaging": "2.0.4",
+        "@lumino/signaling": "2.1.5",
+        "@lumino/virtualdom": "2.0.4",
+        "@lumino/widgets": "2.7.2"
     },
     "sideEffects": [
         "style/*.css",
@@ -96,6 +111,16 @@
         "access": "public"
     },
     "jupyterlab": {
+        "discovery": {
+            "server": {
+                "managers": [
+                    "pip"
+                ],
+                "base": {
+                    "name": "jupyterlab_hub_credit_extension"
+                }
+            }
+        },
         "extension": true,
         "outputDir": "jupyterlab_hub_credit_extension/labextension"
     },

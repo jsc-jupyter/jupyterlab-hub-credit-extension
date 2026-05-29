@@ -35,6 +35,9 @@ jobs:
         set -eux
         python -m pip install .[test]
 
+        jupyter server extension list
+        jupyter server extension list 2>&1 | grep -ie "jupyterlab_hub_credit_extension.*OK"
+
         jupyter labextension list
         jupyter labextension list 2>&1 | grep -ie "jupyterlab_hub_credit_extension.*OK"
         python -m jupyterlab.browser_check
@@ -62,7 +65,7 @@ jobs:
     - name: Install Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.9'
+        python-version: '3.10'
         architecture: 'x64'
     - uses: actions/download-artifact@v4
       with:
@@ -76,6 +79,9 @@ jobs:
 
         pip install "jupyterlab>=4.0.0,<5" jupyterlab_hub_credit_extension*.whl
 
+
+        jupyter server extension list
+        jupyter server extension list 2>&1 | grep -ie "jupyterlab_hub_credit_extension.*OK"
 
         jupyter labextension list
         jupyter labextension list 2>&1 | grep -ie "jupyterlab_hub_credit_extension.*OK"

@@ -1,15 +1,28 @@
 // CreditsView.tsx
 import * as React from 'react';
 import { Dialog, showDialog } from '@jupyterlab/apputils';
+import Tooltip from '@mui/material/Tooltip';
 import HomeIcon from '@mui/icons-material/Home';
 import StopIcon from '@mui/icons-material/StopCircle';
 import { PageConfig } from '@jupyterlab/coreutils';
 
-export function showQuickPopup(message: string) {
+export function showQuickPopup(message: string, closeTab: boolean = false) {
   const hubPrefix = PageConfig.getOption('hubPrefix');
-  const samePagehomeClick = () => {
-    window.location.href = hubPrefix + 'home';
+  const quickPopupOKClick = () => {
+    if (closeTab) {
+      window.close();
+    } else {
+      window.location.href = hubPrefix + 'home';
+    }
   };
+  if (message === '') {
+    if (closeTab) {
+      message = 'You can close this tab.';
+    } else {
+      message =
+        'Click OK to return to the JupyterHub home page, or close this tab manually.';
+    }
+  }
   const body = (
     <div
       style={{
@@ -28,16 +41,17 @@ export function showQuickPopup(message: string) {
     buttons: [Dialog.okButton({ label: 'OK' })]
   }).then(result => {
     if (result.button.accept) {
-      samePagehomeClick();
+      quickPopupOKClick();
     }
   });
 }
 
-export const CreditsView: React.FC = () => {
+export const CreditsView: React.FC<{ token: string }> = ({ token }) => {
   const [credits, setCredits] = React.useState('');
   const [creditsServiceAvailable, setCreditsServiceAvailable] =
     React.useState(false);
   const [serverHasCredits, setServerHasCredits] = React.useState(true);
+  const [showHomeIcon, setShowHomeIcon] = React.useState(true);
 
   let hubServerUser = PageConfig.getOption('hubServerUser2');
   if (hubServerUser === '') {
@@ -45,7 +59,7 @@ export const CreditsView: React.FC = () => {
   }
   const hubServerName = PageConfig.getOption('hubServerName');
   const hubPrefix = PageConfig.getOption('hubPrefix');
-  const token = PageConfig.getOption('token');
+  const hubToken = token === '' ? PageConfig.getOption('token') : token;
 
   React.useEffect(() => {
     if (!hubPrefix) {
@@ -55,7 +69,7 @@ export const CreditsView: React.FC = () => {
     fetch(hubCreditsHealth, {
       method: 'GET',
       headers: {
-        Authorization: `token ${token}`
+        Authorization: `token ${hubToken}`
       },
       credentials: 'omit'
     })
@@ -75,23 +89,23 @@ export const CreditsView: React.FC = () => {
         return;
       }
       let evt: EventSource | null = null;
+      let evtUrl: string = '';
+      let retried = false;
       if (hubServerName && hubServerUser) {
-        evt = new EventSource(
+        evtUrl =
           hubPrefix +
-            'api/credits/sseserver/' +
-            hubServerUser +
-            '/' +
-            hubServerName
-        );
+          'api/credits/sseserver/' +
+          hubServerUser +
+          '/' +
+          hubServerName;
       } else if (hubServerUser) {
-        evt = new EventSource(
-          hubPrefix + 'api/credits/sseserver/' + hubServerUser
-        );
+        evtUrl = hubPrefix + 'api/credits/sseserver/' + hubServerUser;
       } else {
         return;
       }
-      // Open SSE connection
-      evt.onmessage = msg => {
+      evt = new EventSource(evtUrl);
+
+      const onMessage = (msg: any) => {
         const data = JSON.parse(msg.data);
         if (data.error) {
           showQuickPopup(data.error);
@@ -112,9 +126,32 @@ export const CreditsView: React.FC = () => {
         setCredits(text);
       };
 
+      const onError = (err: any) => {
+        if (!retried) {
+          // Retry once with token in query params
+          console.log('SSE error, retrying with token in query params.');
+          retried = true;
+          setShowHomeIcon(false);
+          evt?.close();
+          evtUrl += '?token=' + encodeURIComponent(hubToken);
+          evt = new EventSource(evtUrl);
+          evt.onmessage = msg => {
+            onMessage(msg);
+          };
+          evt.onerror = onError;
+        } else {
+          console.error('SSE error:', err);
+          evt?.close();
+          setServerHasCredits(false);
+        }
+      };
+
+      evt.onmessage = msg => {
+        onMessage(msg);
+      };
+
       evt.onerror = err => {
-        evt.close();
-        setServerHasCredits(false);
+        onError(err);
       };
 
       // Cleanup when component unmounts
@@ -139,11 +176,11 @@ export const CreditsView: React.FC = () => {
     fetch(url, {
       method: 'DELETE',
       headers: {
-        Authorization: `token ${token}`
+        Authorization: `token ${hubToken}`
       },
       credentials: 'omit'
     }).catch(err => console.error('Failed to send stop request:', err));
-    window.location.href = hubPrefix + 'home';
+    showQuickPopup('', !showHomeIcon);
   };
 
   return (
@@ -154,27 +191,35 @@ export const CreditsView: React.FC = () => {
           role="menubar"
           style={{ display: 'flex', alignItems: 'center' }}
         >
-          <HomeIcon
-            onClick={homeClick}
-            style={{
-              marginLeft: '12px',
-              marginRight: '6px',
-              cursor: 'pointer',
-              color: 'var(--jp-accept-color-normal, var(--jp-brand-color1))'
-            }}
-          />
-          {creditsServiceAvailable && (
-            <>
-              <StopIcon
-                onClick={stopClick}
+          {showHomeIcon && (
+            <Tooltip title="Open JupyterHub Home Page">
+              <HomeIcon
+                onClick={homeClick}
                 style={{
                   marginLeft: '12px',
                   marginRight: '6px',
                   cursor: 'pointer',
-                  color: 'var(--jp-warn-color-normal, var(--jp-error-color1))'
+                  color: 'var(--jp-accept-color-normal, var(--jp-brand-color1))'
                 }}
               />
-              <div style={{ marginLeft: '20px' }}>{credits}</div>
+            </Tooltip>
+          )}
+          {creditsServiceAvailable && (
+            <>
+              <Tooltip title="Stop JupyterLab Server">
+                <StopIcon
+                  onClick={stopClick}
+                  style={{
+                    marginLeft: '12px',
+                    marginRight: '6px',
+                    cursor: 'pointer',
+                    color: 'var(--jp-warn-color-normal, var(--jp-error-color1))'
+                  }}
+                />
+              </Tooltip>
+              <Tooltip title="Your current credit balance and cap. Click the stop icon to stop your server and save credits. If there are no credits left, your server will be stopped automatically.">
+                <div style={{ marginLeft: '20px' }}>{credits}</div>
+              </Tooltip>
             </>
           )}
         </ul>

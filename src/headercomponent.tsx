@@ -3,8 +3,11 @@ import { ReactWidget } from '@jupyterlab/apputils';
 import { CreditsView } from './headerview';
 
 export default class HeaderComponent extends ReactWidget {
-  constructor() {
+  private _token: string;
+
+  constructor(token: string) {
     super();
+    this._token = token;
     this.addClass('jp-HeaderComponent');
     this.node.style.display = 'flex';
     this.node.style.alignItems = 'center';
@@ -12,6 +15,6 @@ export default class HeaderComponent extends ReactWidget {
   }
 
   render(): React.ReactElement {
-    return <CreditsView />;
+    return <CreditsView token={this._token} />;
   }
 }

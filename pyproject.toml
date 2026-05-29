@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "jupyterlab_hub_credit_extension"
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 classifiers = [
     "Framework :: Jupyter",
     "Framework :: Jupyter :: JupyterLab",
@@ -16,13 +16,14 @@ classifiers = [
     "License :: OSI Approved :: BSD License",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
+    "jupyter_server>=2.4.0,<3"
 ]
 dynamic = ["version", "description", "authors", "urls", "keywords"]
 
@@ -39,6 +40,7 @@ exclude = [".github", "binder"]
 [tool.hatch.build.targets.wheel.shared-data]
 "jupyterlab_hub_credit_extension/labextension" = "share/jupyter/labextensions/jupyterlab_hub_credit_extension"
 "install.json" = "share/jupyter/labextensions/jupyterlab_hub_credit_extension/install.json"
+"jupyter-config/server-config" = "etc/jupyter/jupyter_server_config.d"
 
 [tool.hatch.build.hooks.version]
 path = "jupyterlab_hub_credit_extension/_version.py"
