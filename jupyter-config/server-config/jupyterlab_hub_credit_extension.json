@@ -1,0 +1,7 @@
+{
+  "ServerApp": {
+    "jpserver_extensions": {
+      "jupyterlab_hub_credit_extension": true
+    }
+  }
+}

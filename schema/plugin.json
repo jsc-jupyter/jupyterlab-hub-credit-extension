@@ -1,0 +1,8 @@
+{
+  "jupyter.lab.shortcuts": [],
+  "title": "jupyterlab-hub-credit-extension",
+  "description": "jupyterlab-hub-credit-extension settings.",
+  "type": "object",
+  "properties": {},
+  "additionalProperties": false
+}
