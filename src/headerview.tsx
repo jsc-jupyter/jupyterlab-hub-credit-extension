@@ -51,7 +51,7 @@ export const CreditsView: React.FC<{ token: string }> = ({ token }) => {
   const [creditsServiceAvailable, setCreditsServiceAvailable] =
     React.useState(false);
   const [serverHasCredits, setServerHasCredits] = React.useState(true);
-  const [showHomeIcon, setShowHomeIcon] = React.useState(true);
+  const [showHomeIcon, setShowHomeIcon] = React.useState(false);
 
   let hubServerUser = PageConfig.getOption('hubServerUser2');
   if (hubServerUser === '') {
@@ -59,7 +59,9 @@ export const CreditsView: React.FC<{ token: string }> = ({ token }) => {
   }
   const hubServerName = PageConfig.getOption('hubServerName');
   const hubPrefix = PageConfig.getOption('hubPrefix');
+  const xsrfToken = PageConfig.getOption('token');
   const hubToken = token === '' ? PageConfig.getOption('token') : token;
+  const isTokenAuthorized = xsrfToken === hubToken;
 
   React.useEffect(() => {
     if (!hubPrefix) {
@@ -89,8 +91,8 @@ export const CreditsView: React.FC<{ token: string }> = ({ token }) => {
         return;
       }
       let evt: EventSource | null = null;
+      let reconnectTimer: number | null = null;
       let evtUrl: string = '';
-      let retried = false;
       if (hubServerName && hubServerUser) {
         evtUrl =
           hubPrefix +
@@ -103,57 +105,64 @@ export const CreditsView: React.FC<{ token: string }> = ({ token }) => {
       } else {
         return;
       }
-      evt = new EventSource(evtUrl);
+      if (isTokenAuthorized) {
+        evtUrl += '?token=' + encodeURIComponent(hubToken);
+      } else {
+        setShowHomeIcon(true);
+      }
 
-      const onMessage = (msg: any) => {
-        const data = JSON.parse(msg.data);
-        if (data.error) {
-          showQuickPopup(data.error);
-          setServerHasCredits(false);
-          return;
-        }
-        let text = 'Credits: ' + data.balance + ' / ' + data.cap;
-        if (data.project) {
-          text +=
-            ' ( ' +
-            data.project.name +
-            ': ' +
-            data.project.balance +
-            ' / ' +
-            data.project.cap +
-            ' )';
-        }
-        setCredits(text);
-      };
+      const connect = () => {
+        const url = evtUrl;
 
-      const onError = (err: any) => {
-        if (!retried) {
-          // Retry once with token in query params
-          console.log('SSE error, retrying with token in query params.');
-          retried = true;
-          setShowHomeIcon(false);
+        evt = new EventSource(url);
+
+        const onMessage = (msg: any) => {
+          const data = JSON.parse(msg.data);
+          if (data.error) {
+            showQuickPopup(data.error);
+            setServerHasCredits(false);
+            return;
+          }
+          let text = 'Credits: ' + data.balance + ' / ' + data.cap;
+          if (data.project) {
+            text +=
+              ' ( ' +
+              data.project.name +
+              ': ' +
+              data.project.balance +
+              ' / ' +
+              data.project.cap +
+              ' )';
+          }
+          setCredits(text);
+        };
+
+        const onError = (err: any) => {
+          console.warn('SSE disconnected, reconnecting...');
+
           evt?.close();
-          evtUrl += '?token=' + encodeURIComponent(hubToken);
-          evt = new EventSource(evtUrl);
-          evt.onmessage = msg => {
-            onMessage(msg);
-          };
-          evt.onerror = onError;
-        } else {
-          console.error('SSE error:', err);
-          evt?.close();
-          setServerHasCredits(false);
-        }
+          evt = null;
+
+          // prevent tight reconnect loop
+          if (reconnectTimer) {
+            window.clearTimeout(reconnectTimer);
+          }
+
+          reconnectTimer = window.setTimeout(() => {
+            connect();
+          }, 1000);
+        };
+
+        evt.onmessage = msg => {
+          onMessage(msg);
+        };
+
+        evt.onerror = err => {
+          onError(err);
+        };
       };
 
-      evt.onmessage = msg => {
-        onMessage(msg);
-      };
-
-      evt.onerror = err => {
-        onError(err);
-      };
-
+      connect();
       // Cleanup when component unmounts
       return () => {
         if (evt) {
